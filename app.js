@@ -9,9 +9,18 @@ app.use(cors())
 const conn = mysql.createConnection({
     host : "localhost",
     user : "root",
-    password : "admin",
+    password : "1234",
     database : "project"
 });
+
+app.use(
+    express.urlencoded({
+        extended: true
+    })
+)
+
+app.use(express.json())
+    
 conn.connect(function(err){
     if(err)
         throw err;
@@ -109,5 +118,94 @@ app.get("/offenses/:dlNo", async(req, res) => {
         res.json(result);
     })      
 })
+
+app.post("/user/new",async(req, res)=>{
+    let query = 'insert into user values(?,?,?,?,?)';
+    let body=req.body;
+    console.log(body);  
+    let formatt=mysql.format(query,[body.userid,body.name,body.dlno,body.addr,body.phone])
+    console.log(formatt);
+    conn.query(formatt,function(error,result){
+        if(error){
+              console.log("error");
+              res.err({message:'inavlid user name'})
+        }
+        res.send({status:"Successful"})
+
+    })
+})
+
+app.post("/complaints/new", async(req, res) => {
+
+    let query = 'insert into complaints(user_id, police_id, station_id, description, status, date) values(?, ?, ?, ?, ?, ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.policeId, body.stationId, body.description, body.status, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.send({status : 'Error : Please check the input'})
+            console.log(err)
+        }
+        res.send({status : "Successful registration"})
+    })
+})
+
+app.get("/tow/:vehicle_no", async(req, res) => {
+
+    let query = 'select * from towed_vehicles where vehicle_no = ?';
+    console.log('here')
+    let queryString = mysql.format(query, [req.params.vehicle_no]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        res.json(result);
+        console.log(result)
+    })     
+})
+
+app.post("/publichome/complaints", async(req, res) => {
+
+    let query = 'insert into complaints(user_id, police_id, station_id, description, date) values(?, ?, ?, ?, ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.policeId, body.stationId, body.description, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.send({status : 'Error : Please check the input'})
+            console.log(err)
+        }
+        res.send({status : "Successful registration"})
+    })
+})
+
+app.post("/publichome/malfunction", async(req, res) => {
+
+    let query = 'insert into malfunction(userid, pincode, problem, descript, date) values(?, ?, ?, ? , ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.pincode, body.problem, body.descript, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.send({status : 'Error : Please check the input'})
+            console.log(err)
+        }
+        res.send({status : "Successful registration"})
+    })
+})
+
+app.get("/publichome/tow/:vehicle_no", async(req, res) => {
+
+    let query = 'select * from towed_vehicles where vehicle_no = ?';
+    console.log('here')
+    let queryString = mysql.format(query, [req.params.vehicle_no]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        res.json(result);
+        console.log(result)
+    })     
+})
+
+
 
 
