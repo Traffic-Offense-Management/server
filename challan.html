@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        body{
+            padding: 1rem;
+        }
+        .logo{
+            text-align: center;
+            width: 100px;
+        }
+
+        h3{
+            font-weight: 400;
+            text-align: center;
+            color: rgb(0, 85, 255);
+        }
+
+        td{
+            padding: 0.5rem 1rem;
+        }
+
+        .data{
+            font: bold;
+        }
+    </style>
+</head>
+<body>
+    
+<!-- file:///home/rakshith/Documents/NITK/Semester 4/Database Systems/Traffic Offense Management/server/logo.jpg -->
+    <!-- <div class="logo">
+        <img src="https://www.google.com/search?q=ministry+of+road+transport+logo&tbm=isch&sxsrf=APq-WBuyFKXSJaAzi76kdGH5OWkz-pKkAA%3A1650979033007&source=hp&biw=1422&bih=738&ei=2PBnYsrYOtCVr7wPiMK3kAo&iflsig=AHkkrS4AAAAAYmf-6UmtElKarl8GM_8Eaz2OmjaA3iL3&oq=&gs_lcp=CgNpbWcQAxgAMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnMgoIIxDvAxDqAhAnUABYAGCAD2gBcAB4AIABAIgBAJIBAJgBAKoBC2d3cy13aXotaW1nsAEK&sclient=img" alt="Ministry of Transport" />
+    </div> -->
+    
+    <h3>Offense Challan</h3>
+
+    {{#each offenseData}}
+    <table>
+        <tbody>
+            <tr>
+                <td>Fine No</td>
+                <td class="data">{{this.fine_no}}</td>
+            </tr>
+            <tr>
+                <td>Name</td>
+                <td class="data">{{this.name}}</td>
+            </tr>
+            <tr>
+                <td>Vehicle No</td>
+                <td class="data">{{this.vehicle_no}}</td>
+            </tr>
+            <tr>
+                <td>Police ID</td>
+                <td class="data">{{this.police_id}}</td>
+            </tr>
+            <tr>
+                <td>Offense</td>
+                <td class="data">{{this.description}}</td>
+            </tr>
+            <tr>
+                <td>Place</td>
+                <td class="data">{{this.place}}</td>
+            </tr>
+            <tr>
+                <td>Date</td>
+                <td class="data">{{this.time}}</td>
+            </tr>
+            <tr>
+                <td>Fine(in Rs)</td>
+                <td class="data">{{this.amount}}</td>
+            </tr>
+        </tbody>
+    </table>
+    {{/each}}
+
+</body>
+</html>
