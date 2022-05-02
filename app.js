@@ -1,23 +1,34 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+var nodemailer = require('nodemailer');
 
 require('dotenv').config();
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = require('twilio')(accountSid, authToken);
+const MY_EMAIL = process.env.EMAIL;
+const PASSWORD = process.env.PASSWORD;
+
+// const accountSid = process.env.TWILIO_ACCOUNT_SID;
+// const authToken = process.env.TWILIO_AUTH_TOKEN;
+// const client = require('twilio')(accountSid, authToken);
+
+// client.messages
+//     .create({
+//         body: 'This is a sample text message',
+//         from: '+19592511385',
+//         to: '+919535664371'
+//     })
+//     .then(message => console.log(message.sid));
 
 
 const cors = require('cors');
 const mysql = require('mysql');
 
-var pdf = require("pdf-creator-node");
-var fs = require("fs");
+const pdf = require("pdf-creator-node");
+const fs = require("fs");
 
-// Read HTML Template
-var html = fs.readFileSync("challan.html", "utf8");
+const html = fs.readFileSync("challan.html", "utf8");
 
 app.use(cors())
 app.use(
@@ -26,7 +37,17 @@ app.use(
     })
   )
 
-app.use(express.json())
+app.use(express.json());
+
+var transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: MY_EMAIL,
+        pass: PASSWORD
+    }
+});
+
+console.log('Set up nodemailer with username ' + MY_EMAIL);
 
 const conn = mysql.createConnection({
     host : "localhost",
@@ -38,7 +59,9 @@ const conn = mysql.createConnection({
 conn.connect(function(err){
     if(err)
         throw err;
-})   
+})   ;
+
+console.log('Connected to mysql database');
 
 let pdfOptions = { 
     "format": "A3",
@@ -100,13 +123,6 @@ app.post("/police/auth", async(req, res) => {
             res.send({message : 'Invalid username or password'});
         }
         else{
-            // const token = jwt.sign({username}, "jwtSecret", {
-            //     expiresIn: 300
-            // });
-            // res.json({
-            //     auth: true,
-            //     token: token,
-            //     result : result[0].police_id
             // })
             res.send({
                 message : 'Login successful',
@@ -150,6 +166,42 @@ app.get("/offenses", async(req, res) => {
 
 // police api calls 
 
+app.get("/police/:policeId/dashboard", async(req, res) => {
+
+    let query = 'select name from police where police_id = ?';
+    let queryString = mysql.format(query, [req.params.policeId]);
+    let policeName;
+    let finalResult = {};
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        console.log(result);
+        finalResult.name = result[0].name;
+    })
+    query = "select sum(fine) as total_fine, count(*) as num_offenses from offenses_today where police_id = ?";
+    queryString = mysql.format(query, [req.params.policeId]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        console.log("Fetching dashboard of police with id", req.params.policeId);
+        finalResult.total_fine_today = result[0].total_fine;
+        finalResult.num_offenses_today = result[0].num_offenses;
+        result[0].name = policeName;
+        console.log(result);
+    })
+    query = "select sum(fine) as total_fine, count(*) as num_offenses from offenses_this_month where police_id = ?";
+    queryString = mysql.format(query, [req.params.policeId]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        console.log("Fetching dashboard of police with id", req.params.policeId);
+        finalResult.total_fine_month = result[0].total_fine;
+        finalResult.num_offenses_month = result[0].num_offenses;
+        console.log(result);
+        res.json(finalResult);
+    })
+});
+
 app.get("/police/:policeId", async(req, res) => {
 
     let query = 'select * from police inner join police_station on police.station_id = police_station.station_id where police_id = ?';
@@ -170,7 +222,6 @@ app.get("/police/challan/:fine_no", async(req, res) => {
         if(err){
             console.log(err);
             res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
-
         }
         else{
             let offense = result[0];
@@ -181,6 +232,7 @@ app.get("/police/challan/:fine_no", async(req, res) => {
                 police_id : offense.police_id,
                 amount : offense.fine,
                 place : offense.place,
+                date : offense.date,
                 time : offense.time,
                 vehicle_no : offense.vehicle_no
             }]
@@ -206,7 +258,7 @@ app.get("/police/challan/:fine_no", async(req, res) => {
             });
             // res.sendFile(__dirname + '/challan.pdf');
         }
-    }) 
+    });
 })
 
 app.get("/police/offenses/:police_id", async(req, res) => {
@@ -273,21 +325,73 @@ app.get("/police/offenses/:police_id", async(req, res) => {
 
 app.post("/police/offenses/new", async(req, res) => {
  
-    let query = 'insert into offender(name, dl_no, vehicle_no, police_id, place, time, offense_no) values(?, ?, ?, ?, ?, ?, ?);'
+    let query = 'insert into offender(name, dl_no, vehicle_no, police_id, place, date, time, offense_no) values(?, ?, ?, ?, ?, ?, ?, ?);'
     let body = req.body;
     console.log(req.body);
-    let formattedQuery = mysql.format(query, [body.name, body.dl_no, body.vehicle_no, body.police_id, body.place, body.time, body.offense_no]);
-    console.log(formattedQuery)
-    conn.query(formattedQuery, function(err, result) {
+    let formattedQuery = mysql.format(query, [body.name, body.dl_no, body.vehicle_no, body.police_id, body.place,  body.date, body.time, body.offense_no]);
+    console.log(formattedQuery);
+
+    conn.query(formattedQuery, function (err, result) {
         if(err){
             res.status(400);
             res.send({status : 'Error : Please check the input'})
             console.log(err)
         }
-        else{
-            res.send({status : "Successful registration"})
+        res.send({status : "Successful registration"});
+        console.log(result);
+        const id = result.insertId;
+        console.log(id);
+        if(body.email){
+            let offenseData;
+            query = 'select * from offender natural join offense where fine_no = ' + id + '; ';
+            conn.query(query, function(err, result){
+                if(err){
+                    console.log(err);
+                    res.err({message: "Offense registered but unable to fetch details"});
+                }
+                else{
+                    offenseData = result[0];
+                    console.log(offenseData);
+                    var mailOptions = {
+                        from: MY_EMAIL,
+                        to: body.email,
+                        subject: 'Traffic violation charges',
+                        html: 'This notice is to inform you that you have been cited with a traffic violation.' +
+                            '    <br>' +
+                            '    <br>' +
+                            + '<br> <h6>Details </h6>' +
+                            '    Name : ' + offenseData.name +
+                            '    <br>' +
+                            '    Vehicle Number : ' + offenseData.vehicle_no +
+                            '    <br>' +
+                            '    Offense : ' + offenseData.description +
+                            '    <br>' +
+                            '    Location : ' + offenseData.place +
+                            '    <br>' +
+                            '    Fine Amount : ' + offenseData.fine +
+                            '    <br>' +
+                            '' +
+                            '' +
+                            '    <br>' +
+                            '    <br>' +
+                            '    This email is sent from a traffic offense management system project for testing purposes only. Kindly ignore if received.' +
+                            ''
+                    };
+                    transporter.sendMail(mailOptions, function(error, info){
+                        if (error) {
+                            console.log(error);
+                        } else {
+                            console.log('Email sent: ' + info.response);
+                        }
+                    });
+                }
+            })
+
         }
-    })
+        else{
+            console.log('No email was given');
+        }
+    });
 })
 
 app.post("/police/towing/new", async(req, res) => {
