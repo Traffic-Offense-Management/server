@@ -50,7 +50,7 @@ var transporter = nodemailer.createTransport({
 console.log('Set up nodemailer with username ' + MY_EMAIL);
 
 const conn = mysql.createConnection({
-    host : "localhost",
+    host : "ec2-65-2-146-200.ap-south-1.compute.amazonaws.com",
     user : "root",
     password : "admin",
     database : "project"
@@ -226,7 +226,8 @@ app.get("/police/challan/:fine_no", async(req, res) => {
                 vehicle_no : offense.vehicle_no
             }]
             console.log(offenseData);
-            let pdfFile = "challan" + offense.fine_no + ".pdf"
+            let curDate = new Date();
+            let pdfFile = "challan" + curDate.getTime() + ".pdf"
             var document = {
                 html: html,
                 data: {
@@ -236,7 +237,7 @@ app.get("/police/challan/:fine_no", async(req, res) => {
             };
 
             pdfOptions['footer']['height'] = '20mm';
-            pdfOptions['footer']['contents'] = '<div>This challan was generated on ' + new Date() +  '</div>'
+            pdfOptions['footer']['contents'] = '<div>This challan was generated on ' + curDate +  '</div>'
 
             pdf.create(document, pdfOptions)
             .then(response => {
