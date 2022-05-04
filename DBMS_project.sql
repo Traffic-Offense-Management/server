@@ -65,8 +65,10 @@ CREATE TABLE user(
 	user_id varchar(10),
     name varchar(30),
     dl_no varchar(15),
+    vehicle_no varchar(10),
     address varchar(100),
     phone decimal(10,0),
+    password varchar(20),
     PRIMARY KEY(user_id)
 );
 
