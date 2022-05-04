@@ -212,7 +212,8 @@ app.get("/police/challan/:fine_no", async(req, res) => {
     conn.query(queryString, function(err, result){
         if(err){
             console.log(err);
-            res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
+            res.status(400);
+            res.send({message: "Error fetching offense history recorded by police "+ req.params.policeId});
         }
         else{
             let offense = result[0];
@@ -288,7 +289,8 @@ app.get("/police/offenses/:police_id", async(req, res) => {
     conn.query(query, function(err, result){
         if(err){
             console.log(err);
-            res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
+            res.status(400)
+            res.send({message: "Error fetching offense history recorded by police "+ req.params.policeId});
 
         }
         else{
@@ -305,7 +307,8 @@ app.get("/police/offenses/:police_id", async(req, res) => {
     conn.query(queryString, function(err, result){
         if(err){
             console.log(err);
-            res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
+            res.status(500);
+            res.send({message: "Error fetching offense history recorded by police "+ req.params.policeId});
 
         }
         else{
@@ -339,7 +342,8 @@ app.post("/police/offenses/new", async(req, res) => {
             conn.query(query, function(err, result){
                 if(err){
                     console.log(err);
-                    res.err({message: "Offense registered but unable to fetch details"});
+                    res.status(500);
+                    res.send({message: "Offense registered but unable to fetch details"});
                 }
                 else{
                     offenseData = result[0];
@@ -459,7 +463,8 @@ app.post("/user/new",async(req, res)=>{
     conn.query(formatt,function(error,result){
         if(error){
               console.log("error");
-              res.err({message:'inavlid user name'})
+              res.status(400);
+              res.send({message:'Invalid user name'})
         }
         res.send({status:"Successful"})
 
