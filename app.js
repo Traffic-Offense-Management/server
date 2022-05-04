@@ -42,6 +42,7 @@ app.use(express.json());
 var transporter = nodemailer.createTransport({
     service: 'smtp.gmail.com',
     port: 465,
+    secure: true,
     auth: {
         user: MY_EMAIL,
         pass: PASSWORD
@@ -417,7 +418,7 @@ app.get("/offenses/user/:username", async(req, res) => {
 
 app.get("/offenses/tow/:username", async(req, res) => {
 
-    let query = 'select user.vehicle_no,station_id,offense_no,fine_no,station_name,place,time from user natural join towed_vehicles natural join police_station where user_id= ? order by time desc';
+    let query = 'select user.vehicle_no,station_id,offense_no,fine_no,station_name,place,time,fine from user natural join towed_vehicles natural join police_station natural join offense where user_id= ? order by time desc';
     let queryString = mysql.format(query, [req.params.username]);
     conn.query(queryString, function(err, result){
         if(err)
