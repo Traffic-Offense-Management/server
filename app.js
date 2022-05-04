@@ -41,6 +41,7 @@ app.use(express.json());
 
 var transporter = nodemailer.createTransport({
     service: 'smtp.gmail.com',
+    port: 465,
     auth: {
         user: MY_EMAIL,
         pass: PASSWORD
