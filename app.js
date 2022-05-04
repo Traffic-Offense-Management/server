@@ -52,7 +52,7 @@ console.log('Set up nodemailer with username ' + MY_EMAIL);
 const conn = mysql.createConnection({
     host : "localhost",
     user : "root",
-    password : "1234",
+    password : "admin",
     database : "project"
 });
 
