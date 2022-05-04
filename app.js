@@ -55,20 +55,20 @@ app.get("/police", async(req, res) => {
 })
 
 
-app.get("/police/:policeId", async(req, res) => {
+// app.get("/police/:policeId", async(req, res) => {
 
-    let query = 'select * from police where police_id = ?';
-    let queryString = mysql.format(query, [req.params.policeId]);
-    conn.connect(function(err){
-        if(err)
-            throw err;
-        conn.query(queryString, function(err, result){
-            if(err)
-                throw err;
-            res.json(result);
-        })
-    })       
-})
+//     let query = 'select * from police where police_id = ?';
+//     let queryString = mysql.format(query, [req.params.policeId]);
+//     conn.connect(function(err){
+//         if(err)
+//             throw err;
+//         conn.query(queryString, function(err, result){
+//             if(err)
+//                 throw err;
+//             res.json(result);
+//         })
+//     })       
+// })
 
 
 app.get("/user/:userId", async(req, res) => {
@@ -97,6 +97,28 @@ app.get("/offenses/police/:policeId", async(req, res) => {
     })       
 })
 
+app.get("/offenses/user/:username", async(req, res) => {
+
+    let query = 'select police_id,offender.offense_no,offense.fine,fine_no,place,offense.description,time from offender inner join user inner join offense on offender.vehicle_no=user.vehicle_no and offense.offense_no=offender.offense_no where user_id= ? order by time desc';
+    let queryString = mysql.format(query, [req.params.username]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        res.json(result);
+    })      
+})
+
+app.get("/offenses/tow/:username", async(req, res) => {
+
+    let query = 'select user.vehicle_no,station_id,offense_no,fine_no,station_name,place,time from user natural join towed_vehicles natural join police_station where user_id= ? order by time desc';
+    let queryString = mysql.format(query, [req.params.username]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            throw err;
+        res.json(result);
+    })      
+})
+
 app.get("/complaints/:userId", async(req, res) => {
 
     let query = 'select * from complaints where user_id = ?';
@@ -120,10 +142,10 @@ app.get("/offenses/:dlNo", async(req, res) => {
 })
 
 app.post("/user/new",async(req, res)=>{
-    let query = 'insert into user values(?,?,?,?,?)';
+    let query = 'insert into user(user_id,name,dl_no,vehicle_no,address,phone,password) values(?,?,?,?,?,?,?)';
     let body=req.body;
     console.log(body);  
-    let formatt=mysql.format(query,[body.userid,body.name,body.dlno,body.addr,body.phone])
+    let formatt=mysql.format(query,[body.userid,body.name,body.dlno,body.vehicle_no,body.addr,body.phone,body.password])
     console.log(formatt);
     conn.query(formatt,function(error,result){
         if(error){
@@ -205,6 +227,8 @@ app.get("/publichome/tow/:vehicle_no", async(req, res) => {
         console.log(result)
     })     
 })
+
+
 
 
 
