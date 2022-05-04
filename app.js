@@ -40,7 +40,7 @@ app.use(
 app.use(express.json());
 
 var transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: 'smtp.gmail.com',
     auth: {
         user: MY_EMAIL,
         pass: PASSWORD

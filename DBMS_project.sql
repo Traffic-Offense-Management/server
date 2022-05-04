@@ -219,7 +219,6 @@ insert into complaints values(3, 'nbeagan7', 10002, 1002, "Did not catch a perso
 insert into complaints values(4 , 'gcraske2', 10003, 1003, 'Seen riding without helmet', '2019-03-23 15:20:23');
 insert into complaints values(5 , 'xbootyman8', 10004, 1004, 'Not regular in monitoring traffic', '2021-12-21 16:20:23');
 
-
 insert into towing_offenses values(6);
 insert into towing_offenses values(7);
 
