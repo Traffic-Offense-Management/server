@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+// const jwt = require('jsonwebtoken');
 var nodemailer = require('nodemailer');
 
 // require('dotenv').config();
@@ -52,7 +52,7 @@ var transporter = nodemailer.createTransport({
 console.log('Set up nodemailer with username ' + MY_EMAIL);
 
 const conn = mysql.createConnection({
-    host : "localhost",
+    host : "ec2-65-2-146-200.ap-south-1.compute.amazonaws.com",
     user : "root",
     password : "admin",
     database : "project",
@@ -438,6 +438,7 @@ app.get("/user/complaints/:userId", async(req, res) => {
     conn.query(queryString, function(err, result){
         if(err)
             console.log(err);
+        console.log(result);
         res.json(result);
     })     
 })
