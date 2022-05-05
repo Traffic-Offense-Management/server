@@ -52,7 +52,7 @@ var transporter = nodemailer.createTransport({
 console.log('Set up nodemailer with username ' + MY_EMAIL);
 
 const conn = mysql.createConnection({
-    host : "ec2-65-2-146-200.ap-south-1.compute.amazonaws.com",
+    host : "localhost",
     user : "root",
     password : "admin",
     database : "project",
