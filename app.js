@@ -374,7 +374,7 @@ app.post("/police/offenses/new", async(req, res) => {
                             console.log(error);
                             res.status(500).send('Email could not be sent. Please check the input');
                         } else {
-                            console.log('Email sent: ' + info.response);
+                            console.log('Email sent to ' + mailOptions.to + ': ' + info.response);
                         }
                     });
                 }
