@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 // const jwt = require('jsonwebtoken');
 var nodemailer = require('nodemailer');
 
-// require('dotenv').config();
+require('dotenv').config();
 
 const MY_EMAIL = process.env.EMAIL;
 const PASSWORD = process.env.PASSWORD;
@@ -84,7 +84,7 @@ app.listen(8080, () => {})
 
 app.get("/offenses", async(req, res) => {
 
-    conn.query('select * from offense', function(err, result){
+    conn.query('select * from offense where not exists (select offense_no from towing_offenses where towing_offenses.offense_no = offense.offense_no);', function(err, result){
         if(err)
             console.log(err);
         res.json(result);
@@ -328,11 +328,10 @@ app.post("/police/offenses/new", async(req, res) => {
 
     conn.query(formattedQuery, function (err, result) {
         if(err){
-            res.status(400);
-            res.send({status : 'Error : Please check the input'})
-            console.log(err)
+            res.send(400, 'Error : Please check the input');
+            console.log(err);
+            return;
         }
-        res.send({status : "Successful registration"});
         console.log(result);
         const id = result.insertId;
         console.log(id);
@@ -342,8 +341,7 @@ app.post("/police/offenses/new", async(req, res) => {
             conn.query(query, function(err, result){
                 if(err){
                     console.log(err);
-                    res.status(500);
-                    res.send({message: "Offense registered but unable to fetch details"});
+                    res.send(500, 'Offense registered but unable to fetch details');
                 }
                 else{
                     offenseData = result[0];
@@ -352,10 +350,8 @@ app.post("/police/offenses/new", async(req, res) => {
                         from: MY_EMAIL,
                         to: body.email,
                         subject: 'Traffic violation charges',
-                        html: 'This notice is to inform you that you have been cited with a traffic violation.' +
-                            '    <br>' +
-                            '    <br>' +
-                            + 'Details<br>' +
+                        html: '<p>This notice is to inform you that you have been cited with a traffic violation.</p>' +
+                             '<h3>Details</h3>' +
                             '    Name : ' + offenseData.name +
                             '    <br>' +
                             '    Vehicle Number : ' + offenseData.vehicle_no +
@@ -376,6 +372,7 @@ app.post("/police/offenses/new", async(req, res) => {
                     transporter.sendMail(mailOptions, function(error, info){
                         if (error) {
                             console.log(error);
+                            res.status(500).send('Email could not be sent. Please check the input');
                         } else {
                             console.log('Email sent: ' + info.response);
                         }
@@ -385,7 +382,7 @@ app.post("/police/offenses/new", async(req, res) => {
 
         }
         else{
-            console.log('No email was given');
+            res.send('Offense successfully registered.');
         }
     });
 })

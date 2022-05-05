@@ -158,6 +158,8 @@ insert into offense values(4, 'Driving without licence', 2000);
 insert into offense values(5, 'Riding without helmet', 1000);
 insert into offense values(6, 'Parking infront of No Parking', 3000);
 insert into offense values(7, 'Vehicle abandoned', 8000);
+insert into offense values(8, 'Drink and drive', 2000);
+insert into offense values(9, 'Not wearing seatbelt', 500);
 
 insert into user  values ('ctong0', 'Connie Tong', '0043718043','KA01MN9876', '1 Brickson Park Circle', '1935596015','123');
 insert into user  values ('rkinvig1', 'Robbie Kinvig', '4430701458','AP01JT5678', '17426 Bellgrove Lane', '1783902001','123');
