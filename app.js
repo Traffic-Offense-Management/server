@@ -431,9 +431,9 @@ app.get("/offenses/tow/:username", async(req, res) => {
     })      
 })
 
-app.get("/complaints/:userId", async(req, res) => {
+app.get("/user/complaints/:userId", async(req, res) => {
 
-    let query = 'select * from complaints where user_id = ?';
+    let query = 'select complaint_id, police_id,  station_id, description, status, date from complaints where user_id = ?';
     let queryString = mysql.format(query, [req.params.userId]);
     conn.query(queryString, function(err, result){
         if(err)
