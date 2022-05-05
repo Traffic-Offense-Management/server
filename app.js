@@ -355,7 +355,7 @@ app.post("/police/offenses/new", async(req, res) => {
                         html: 'This notice is to inform you that you have been cited with a traffic violation.' +
                             '    <br>' +
                             '    <br>' +
-                            + '<br> <h6>Details </h6>' +
+                            + 'Details<br>' +
                             '    Name : ' + offenseData.name +
                             '    <br>' +
                             '    Vehicle Number : ' + offenseData.vehicle_no +
