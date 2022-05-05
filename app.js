@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 var nodemailer = require('nodemailer');
 
-require('dotenv').config();
+// require('dotenv').config();
 
 const MY_EMAIL = process.env.EMAIL;
 const PASSWORD = process.env.PASSWORD;
@@ -55,7 +55,7 @@ const conn = mysql.createConnection({
     host : "localhost",
     user : "root",
     password : "admin",
-    database : "project"
+    database : "project",
 });
 
 
@@ -544,6 +544,576 @@ app.get("/publichome/tow/:vehicle_no", async(req, res) => {
 
 
 
+const jwt = require('jsonwebtoken');
+const JWT_SECRET_KEY = '=sadadwqduhaikukjhlkjodsufasyfasdgas';
+
+function addAuthority(username, password, name, position) {
+    return new Promise((resolve, reject) => {
+        let query = 'insert into authority values(?,?,?,?)';
+        bcrypt.hash(password, 10, function (err, hash) {
+            let formattedQuery = mysql.format(query, [username, hash, name, position]);
+            console.log(formattedQuery);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("Registration failed");
+                    reject (false);
+                } else {
+                    console.log("Registration Success");
+                    resolve(true);
+                }
+            }
+            );
+        });
+    });
+}
+
+function genAccessToken(user) {
+    const userId = user.id;
+    const position = user.position;
+    const role = user.role;
+    const tokenPayload = { userId, position, role };
+    const accessToken = jwt.sign(tokenPayload, JWT_SECRET_KEY);
+    return accessToken;
+}
+
+function addPolice(police_id, station_id, name, age, username, password) {
+    return new Promise((resolve, reject) => {
+        let query = 'insert into police values(?,?,?,?,?,?)';
+        bcrypt.hash(password, 10, function (err, hash) {
+            let formattedQuery = mysql.format(query, [police_id, station_id, name, age, username, hash]);
+            console.log(formattedQuery);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("Add police failed");
+                    return false;
+                } else {
+                    console.log("Add police succeeded");
+                    return true;
+                }
+            }
+            );
+        });
+    });
+}
 
 
+
+function login(username, password) {
+    return new Promise((resolve, reject) => {
+        let query = 'select * from authority where username = ?';
+        let formattedQuery = mysql.format(query, [username]);
+        conn.query(formattedQuery, function (err, result) {
+            if (err || result.length == 0) {
+                console.log("Username does not exist");
+                reject("Username does not exist");
+            } else {
+                bcrypt.compare(password, result[0].password, function (err, res) {
+                    if (res) {
+                        console.log("Login Success");
+                        resolve({ name: result[0].name, position: result[0].position, role: "Admin" });
+                    } else {
+                        console.log("Login Failed");
+                        reject("Password is incorrect");
+                    }
+                });
+            }
+        }
+
+        );
+    })
+
+}
+
+app.post('/admin/login', async (request, response) => {
+    const username = request.body.username;
+    const password = request.body.password;
+    console.log(username, password)
+    login(username, password).then(user => {
+        const token = genAccessToken(user);
+        response.json({ token });
+    }).catch(error => {
+        response.status(401).send(error);
+    })
+
+});
+
+function authenticateToken(request) {
+    return new Promise((resolve, reject) => {
+        const accessToken = request.headers['authorization'];
+        console.log(accessToken);
+        jwt.verify(accessToken, JWT_SECRET_KEY, (err, decoded) => {
+            if (err) {
+                console.log("Token is invalid");
+                reject("Invalid Token");
+            } else {
+                if (decoded.role === "Admin") {
+                    console.log("Authorized")
+                    resolve(true)
+                }
+                else {
+                    console.log("invalid token");
+                    reject("invalid token")
+                }
+            }
+        });
+    })
+}
+
+app.get('/admin/auth', async (request, response) => {
+    const accessToken = request.headers['authorization'];
+    console.log(accessToken);
+    jwt.verify(accessToken, JWT_SECRET_KEY, (err, decoded) => {
+        if (err) {
+            response.status(403).send("You are not authorized to access this page");
+        } else {
+            if (decoded.role === "Admin") {
+                console.log("Authorized")
+                response.status(200).send(true);
+            }
+            else {
+                response.status(403).send("You are not authorized to access this page");
+            }
+        }
+    });
+});
+
+app.get('/admin/Authority', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        console.log("Authorized for authority")
+        if (res === true) {
+            let query = 'select * from authority';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No authority found");
+                    response.status(404).send("No authority found");
+                } else {
+                    console.log(JSON.stringify(result))
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Authority table error") })
+})
+
+app.get('/admin/Police', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res === true) {
+            let query = 'select * from police';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No Police found");
+                    response.status(404).send("No police found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Police table error") })
+})
+
+app.get('/admin/Stations', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res === true) {
+
+            let query = 'select * from police_station';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No stations found");
+
+                    response.status(404).send("No stations found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Station table error") })
+})
+
+
+
+app.get('/admin/Complaints', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res === true) {
+            let query = 'select * from complaints';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No Complaints found");
+                    response.status(404).send("No complaints found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Complaints table error") })
+})
+
+app.get('/admin/Offenses', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res === true) {
+            let query = 'select * from offender inner join offense on offender.offense_no = offense.offense_no';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No offenders found");
+                    response.status(404).send("No offenders found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Offenses table error") })
+})
+
+app.get('/admin/Camera', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res === true) {
+            let query = 'select * from camera';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No authority found");
+                    response.status(404).send("No authority found");
+                } else {
+                    console.log("Authority found");
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Camera table error") })
+})
+app.post('/admin/Authority/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from authority where cast(${request.body.field} as char) like ?`;
+            let formattedQuery = mysql.format(query, [request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No Authority found");
+
+                    response.status(404).send("No Authority found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+app.post('/admin/Authority/add', async (request, response) => {
+    console.log(JSON.stringify(request.body));
+    authenticateToken(request).then((res) => {
+        if(res){
+            addAuthority(request.body.username, request.body.password, request.body.name, request.body.position).then((res) => {
+                console.log("Added authority");
+                response.send(true)
+            }).catch(error => { response.status(404);console.log("Error adding authority") })
+        }
+    }).catch(error => { response.status(404);console.log(error) })
+})
+
+
+app.post('/admin/Authority/rem', async (request, response) => {
+    console.log(JSON.stringify(request.body));
+    authenticateToken(request).then((res) => {
+        if(res){
+            let query = 'delete from authority where username = ?';
+            let formattedQuery = mysql.format(query, [request.body.username]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("authority delete error");
+
+                    response.status(404).send("authority delete error");
+                } else {
+                    response.send(true);
+                }
+            }
+            );
+            
+        }
+    }).catch(error => { response.status(404);console.log(error) })
+})
+
+
+app.post('/admin/Police/rem', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if(res){
+            let query = 'delete from police where police_id = ?';
+            let formattedQuery = mysql.format(query, [parseInt(request.body.police_id)]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("police delete error");
+
+                    response.status(404).send("police delete error");
+                } else {
+                    response.send(true);
+                }
+            }
+            );
+            
+        }
+    }).catch(error => { response.status(404);console.log(error) })
+})
+
+app.post('/admin/Stations/rem', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if(res){
+            let query = 'delete from police_station where station_id = ?';
+            let formattedQuery = mysql.format(query, [parseInt(request.body.station_id)]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("stations delete error");
+
+                    response.status(404).send("stations delete error");
+                } else {
+                    response.send(true);
+                }
+            }
+            );
+            
+        }
+    }).catch(error => { response.status(404);console.log(error) })
+})
+
+app.post('/admin/Police/add', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if(res){
+            let query = 'insert into police(station_id, name, dob, address, email, phone_no, username, password) values (?,?,?,?,?,?,?,?)';
+            let formattedQuery = mysql.format(query, [parseInt(request.body.station_id), request.body.name, request.body.dob, request.body.address, request.body.email, request.body.phone_no, request.body.username, request.body.password]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("Police add error");
+
+                    response.status(404).send("police add error");
+                } else {
+                    response.send(true);
+                }
+            }
+            );
+        }
+    }).catch(error => { response.status(403);console.log("Police table add error") })
+})
+
+app.post('/admin/Stations/add', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if(res){
+            let query = 'insert into police_station(station_name, station_address, pincode) values (?,?,?)';
+            let formattedQuery = mysql.format(query, [request.body.station_name, request.body.station_address, request.body.pincode]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("Station add error");
+
+                    response.status(404).send("Station add error");
+                } else {
+                    response.send(true);
+                }
+            }
+            );
+        }
+    }).catch(error => { response.status(403);console.log("Station table add error") })
+})
+
+app.post("/admin/Offenses/add", async(req, res) => {
+ 
+    let query = 'insert into offender(name, dl_no, vehicle_no, police_id, place, time, offense_no) values(?, ?, ?, ?, ?, ?, ?);'
+    let body = req.body;
+    console.log(req.body);
+    let formattedQuery = mysql.format(query, [body.name, body.dl_no, body.vehicle_no, body.police_id, body.place, body.time, body.offense_no]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.status(404);
+            res.send({status : 'Error : Please check the input'})
+            console.log(err)
+        }
+        else{
+            res.send(true)
+        }
+    })
+})
+
+app.post("admin/Complaints/add", async(req, res) => {
+
+    let query = 'insert into complaints(user_id, police_id, station_id, description, date) values(?, ?, ?, ?, ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.policeId, body.stationId, body.description, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.status(404);
+            console.log(err)
+        }
+        res.send(true)
+        console.log('inserted into complaints')
+    })
+})
+
+app.post("admin/Malfunction/add", async(req, res) => {
+
+    let query = 'insert into malfunctions(userid, pincode, problem, descript,date) values(?, ?, ?, ?, ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.pincode, body.problem, body.descript, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.status(404);
+            console.log(err)
+        }
+        res.send(true)
+        console.log('inserted into malfunction');
+    })
+})
+
+app.post("admin/Camera/add", async(req, res) => {
+
+    let query = 'insert into camera(cid, clocation,ctoken) values(?, ?, ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.cid, body.clocation, body.ctoken]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.status(404);
+            console.log(err)
+        }
+        res.send(true)
+        console.log('inserted into camera');
+    })
+})
+
+app.post('/admin/Police/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from police where cast(${request.body.field} as char) like ?`;
+            let formattedQuery = mysql.format(query, ["%" + request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No police found");
+
+                    response.status(404).send("No police found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+app.post('/admin/Stations/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from police_station where cast(${request.body.field} as char) like ?`;
+            let formattedQuery = mysql.format(query, ["%" + request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No stations found");
+
+                    response.status(404).send("No stations found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+
+app.post('/admin/Complaints/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from complaints where cast(${request.body.field} as char) like ?`;
+            console.log(query);
+            let formattedQuery = mysql.format(query, ["%" + request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No complaints found");
+
+                    response.status(404).send("No complaints found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+app.post('/admin/Offenses/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from offender inner join offense on offender.offense_no = offense.offense_no where cast(${request.body.field} as char) like ?`;
+            let formattedQuery = mysql.format(query, ["%" + request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No offenders found");
+
+                    response.status(404).send("No offenders found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+app.post('/admin/Camera/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from camera where cast(${request.body.field} as char) like ?`;
+            let formattedQuery = mysql.format(query, ["%" + request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No stations found");
+
+                    response.status(404).send("No stations found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+app.post('/admin/Malfunction/options', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res == true) {
+            let query = `select * from malfunction where cast(${request.body.field} as char) like ?`;
+            let formattedQuery = mysql.format(query, ["%" + request.body.text + "%"]);
+            conn.query(formattedQuery, function (err, result) {
+                if (err ) {
+                    console.log("No malfunctions found");
+
+                    response.status(404).send("No malfunctions found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    })
+})
+app.get('/admin/Malfunction', async (request, response) => {
+    authenticateToken(request).then((res) => {
+        if (res === true) {
+            let query = 'select * from malfunction';
+            let formattedQuery = mysql.format(query);
+            conn.query(formattedQuery, function (err, result) {
+                if (err || result.length == 0) {
+                    console.log("No malfunctions found");
+                    response.status(404).send("No malfunctions found");
+                } else {
+                    response.status(200).send(result);
+                }
+            }
+            );
+        }
+    }).catch(error => { console.log("Offenses table error") })
+})
 
