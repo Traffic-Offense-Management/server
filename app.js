@@ -40,7 +40,9 @@ app.use(
 app.use(express.json());
 
 var transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: MY_EMAIL,
         pass: PASSWORD
@@ -56,9 +58,10 @@ const conn = mysql.createConnection({
     database : "project",
 });
 
+
 conn.connect(function(err){
     if(err)
-        throw err;
+        console.log(err);
 })   ;
 
 console.log('Connected to mysql database');
@@ -83,7 +86,7 @@ app.get("/offenses", async(req, res) => {
 
     conn.query('select * from offense', function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
     })  
     
@@ -93,7 +96,7 @@ app.get("/towing_offenses", async(req, res) => {
 
     conn.query('select * from towing_offenses natural join offense', function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
     })  
     
@@ -105,7 +108,7 @@ app.get("/user/:userId", async(req, res) => {
     let queryString = mysql.format(query, [req.params.userId]);
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
     })      
 })
@@ -136,7 +139,7 @@ app.get("/police", async(req, res) => {
 
     conn.query('select * from police', function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
     })   
     
@@ -146,23 +149,11 @@ app.get("/policestations", async(req, res) => {
 
     conn.query('select * from police_station', function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
     })   
     
 });
-
-app.get("/offenses", async(req, res) => {
-
-    conn.query('select * from offense', function(err, result){
-        if(err)
-            throw err;
-        console.log('offenses');
-        console.log(res);
-        res.json(result);
-    })   
-    
-})
 
 // police api calls 
 
@@ -174,7 +165,7 @@ app.get("/police/:policeId/dashboard", async(req, res) => {
     let finalResult = {};
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         console.log(result);
         finalResult.name = result[0].name;
     })
@@ -182,7 +173,7 @@ app.get("/police/:policeId/dashboard", async(req, res) => {
     queryString = mysql.format(query, [req.params.policeId]);
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         console.log("Fetching dashboard of police with id", req.params.policeId);
         finalResult.total_fine_today = result[0].total_fine;
         finalResult.num_offenses_today = result[0].num_offenses;
@@ -193,7 +184,7 @@ app.get("/police/:policeId/dashboard", async(req, res) => {
     queryString = mysql.format(query, [req.params.policeId]);
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         console.log("Fetching dashboard of police with id", req.params.policeId);
         finalResult.total_fine_month = result[0].total_fine;
         finalResult.num_offenses_month = result[0].num_offenses;
@@ -208,7 +199,7 @@ app.get("/police/:policeId", async(req, res) => {
     let queryString = mysql.format(query, [req.params.policeId]);
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         console.log("Fetching details of police with id", req.params.policeId);
         console.log(result);
         res.json(result);
@@ -221,7 +212,8 @@ app.get("/police/challan/:fine_no", async(req, res) => {
     conn.query(queryString, function(err, result){
         if(err){
             console.log(err);
-            res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
+            res.status(400);
+            res.send({message: "Error fetching offense history recorded by police "+ req.params.policeId});
         }
         else{
             let offense = result[0];
@@ -237,7 +229,8 @@ app.get("/police/challan/:fine_no", async(req, res) => {
                 vehicle_no : offense.vehicle_no
             }]
             console.log(offenseData);
-            let pdfFile = "challan" + offense.fine_no + ".pdf"
+            let curDate = new Date();
+            let pdfFile = "challan" + curDate.getTime() + ".pdf"
             var document = {
                 html: html,
                 data: {
@@ -247,7 +240,7 @@ app.get("/police/challan/:fine_no", async(req, res) => {
             };
 
             pdfOptions['footer']['height'] = '20mm';
-            pdfOptions['footer']['contents'] = '<div>This challan was generated on ' + new Date() +  '</div>'
+            pdfOptions['footer']['contents'] = '<div>This challan was generated on ' + curDate +  '</div>'
 
             pdf.create(document, pdfOptions)
             .then(response => {
@@ -296,7 +289,8 @@ app.get("/police/offenses/:police_id", async(req, res) => {
     conn.query(query, function(err, result){
         if(err){
             console.log(err);
-            res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
+            res.status(400)
+            res.send({message: "Error fetching offense history recorded by police "+ req.params.policeId});
 
         }
         else{
@@ -313,7 +307,8 @@ app.get("/police/offenses/:police_id", async(req, res) => {
     conn.query(queryString, function(err, result){
         if(err){
             console.log(err);
-            res.err({message: "Error fetching offense history recorded by police "+ req.params.policeId});
+            res.status(500);
+            res.send({message: "Error fetching offense history recorded by police "+ req.params.policeId});
 
         }
         else{
@@ -347,7 +342,8 @@ app.post("/police/offenses/new", async(req, res) => {
             conn.query(query, function(err, result){
                 if(err){
                     console.log(err);
-                    res.err({message: "Offense registered but unable to fetch details"});
+                    res.status(500);
+                    res.send({message: "Offense registered but unable to fetch details"});
                 }
                 else{
                     offenseData = result[0];
@@ -359,7 +355,7 @@ app.post("/police/offenses/new", async(req, res) => {
                         html: 'This notice is to inform you that you have been cited with a traffic violation.' +
                             '    <br>' +
                             '    <br>' +
-                            + '<br> <h6>Details </h6>' +
+                            + 'Details<br>' +
                             '    Name : ' + offenseData.name +
                             '    <br>' +
                             '    Vehicle Number : ' + offenseData.vehicle_no +
@@ -413,18 +409,97 @@ app.post("/police/towing/new", async(req, res) => {
     })
 })
 
+app.get("/offenses/user/:username", async(req, res) => {
+
+    let query = 'select police_id,offender.offense_no,offense.fine,fine_no,place,offense.description,date from offender inner join user inner join offense on offender.vehicle_no=user.vehicle_no and offense.offense_no=offender.offense_no where user_id= ? order by date desc';
+    let queryString = mysql.format(query, [req.params.username]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            console.log(err);
+        res.json(result);
+    })      
+})
+
+app.get("/offenses/tow/:username", async(req, res) => {
+
+    let query = 'select user.vehicle_no,station_id,offense_no,fine_no,station_name,place,time,fine from user natural join towed_vehicles natural join police_station natural join offense where user_id= ? order by time desc';
+    let queryString = mysql.format(query, [req.params.username]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            console.log(err);
+        res.json(result);
+    })      
+})
+
 app.get("/complaints/:userId", async(req, res) => {
 
     let query = 'select * from complaints where user_id = ?';
     let queryString = mysql.format(query, [req.params.userId]);
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
     })     
 })
 
+
+app.get("/offenses/:dlNo", async(req, res) => {
+
+    let query = 'select * from offender where dl_no = ?';
+    let queryString = mysql.format(query, [req.params.dlNo]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            console.log(err);
+        res.json(result);
+    })      
+})
+
+app.post("/user/new",async(req, res)=>{
+    let query = 'insert into user(user_id,name,dl_no,vehicle_no,address,phone,password) values(?,?,?,?,?,?,?)';
+    let body=req.body;
+    console.log(body);  
+    let formatt=mysql.format(query,[body.userid,body.name,body.dlno,body.vehicle_no,body.addr,body.phone,body.password])
+    console.log(formatt);
+    conn.query(formatt,function(error,result){
+        if(error){
+              console.log("error");
+              res.status(400);
+              res.send({message:'Invalid user name'})
+        }
+        res.send({status:"Successful"})
+
+    })
+})
+
 app.post("/complaints/new", async(req, res) => {
+
+    let query = 'insert into complaints(user_id, police_id, station_id, description, date) values(?, ?, ?, ?, ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.policeId, body.stationId, body.description, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.send({status : 'Error : Please check the input'})
+            console.log(err);
+        }
+        res.send({status : "Successful registration"})
+    })
+})
+
+app.get("/tow/:vehicle_no", async(req, res) => {
+
+    let query = 'select * from towed_vehicles where vehicle_no = ?';
+    console.log('here')
+    let queryString = mysql.format(query, [req.params.vehicle_no]);
+    conn.query(queryString, function(err, result){
+        if(err)
+            console.log(err);
+        res.json(result);
+        console.log(result)
+    })     
+})
+
+app.post("/publichome/complaints", async(req, res) => {
 
     let query = 'insert into complaints(user_id, police_id, station_id, description, date) values(?, ?, ?, ?, ?);'
     let body = req.body;
@@ -439,16 +514,34 @@ app.post("/complaints/new", async(req, res) => {
     })
 })
 
-app.get("/offenses/:dlNo", async(req, res) => {
+app.post("/publichome/malfunction", async(req, res) => {
 
-    let query = 'select * from offender where dl_no = ?';
-    let queryString = mysql.format(query, [req.params.dlNo]);
+    let query = 'insert into malfunction(userid, pincode, problem, descript, date) values(?, ?, ?, ? , ?);'
+    let body = req.body;
+    let formattedQuery = mysql.format(query, [body.userId, body.pincode, body.problem, body.descript, body.date]);
+    console.log(formattedQuery)
+    conn.query(formattedQuery, function(err, result) {
+        if(err){
+            res.send({status : 'Error : Please check the input'})
+            console.log(err)
+        }
+        res.send({status : "Successful registration"})
+    })
+})
+
+app.get("/publichome/tow/:vehicle_no", async(req, res) => {
+
+    let query = 'select * from towed_vehicles where vehicle_no = ?';
+    console.log('here')
+    let queryString = mysql.format(query, [req.params.vehicle_no]);
     conn.query(queryString, function(err, result){
         if(err)
-            throw err;
+            console.log(err);
         res.json(result);
-    })      
+        console.log(result)
+    })     
 })
+
 
 
 const jwt = require('jsonwebtoken');
@@ -1023,3 +1116,4 @@ app.get('/admin/Malfunction', async (request, response) => {
         }
     }).catch(error => { console.log("Offenses table error") })
 })
+
