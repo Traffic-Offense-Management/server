@@ -19,7 +19,7 @@ drop table if exists vehicles;
 
 CREATE TABLE authority(
     username varchar(20) UNIQUE PRIMARY KEY,
-    password binary(32),
+    password char(60),
     name varchar(30),
     position varchar(50)
 );
@@ -128,11 +128,10 @@ CREATE TABLE break_and_run(
     FOREIGN KEY(offense_no) REFERENCES offense(offense_no)
 );
 
-insert into authority values('rakshith', 'mRak@2107', 'Rakshith Mohan', 'Secretary');
-insert into authority values('abhishek', 'abh@321', 'Abhishek S', 'Managing Director');
-insert into authority values('amogh', 'mRak@amg_1423', 'Amogh Umesh', 'Secretary');
-insert into authority values('pratik', 'pratik_jal#213', 'Pratik Jallan', 'Deputy Commissioner');
-insert into authority values('asim', 'assim_453#', 'Assim', 'Assistant Commisioner of Police    ');
+insert into authority values('rakshith', '$2b$10$WDkHLoD2.HqlRNDr7/n7cOpmNjQEwwJhiiRNA2vfFRGLPYW8dJlUi', 'Rakshith Mohan', 'Secretary');
+
+insert into authority values('amogh', '$2b$10$y.9DxxQY8h8g/yx7j782VOSe1ii0WveWrEg2l7KeWyYS21qLr1v2O', 'Amogh Umesh', 'Secretary');
+
 
 insert into police_station values(1000, 'Mangalore Police Station', 'NH 66, Surathkal, Near Govinda Dasa College, Mangaluru, Karnataka', '575014');
 insert into police_station values(1001,  'Chamarajpet Police Station', 'Albert Victor Road, Near-Vani Vilas Hospital, Chamarajpet, Bengaluru, Karnataka', '560018');
