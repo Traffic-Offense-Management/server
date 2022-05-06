@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 var nodemailer = require('nodemailer');
 
 // require('dotenv').config();
-
+const JWT_SECRET_KEY = '=sadadwqduhaikukjhlkjodsufasyfasdgas';
 const MY_EMAIL = process.env.EMAIL;
 const PASSWORD = process.env.PASSWORD;
 
@@ -544,8 +544,7 @@ app.get("/publichome/tow/:vehicle_no", async(req, res) => {
 
 
 
-const jwt = require('jsonwebtoken');
-const JWT_SECRET_KEY = '=sadadwqduhaikukjhlkjodsufasyfasdgas';
+
 
 function addAuthority(username, password, name, position) {
     return new Promise((resolve, reject) => {
@@ -846,21 +845,29 @@ app.post('/admin/Authority/rem', async (request, response) => {
 
 app.post('/admin/Police/rem', async (request, response) => {
     authenticateToken(request).then((res) => {
-        if(res){
-            let query = 'delete from police where police_id = ?';
-            let formattedQuery = mysql.format(query, [parseInt(request.body.police_id)]);
-            conn.query(formattedQuery, function (err, result) {
-                if (err ) {
-                    console.log("police delete error");
-
-                    response.status(404).send("police delete error");
-                } else {
-                    response.send(true);
+        let disableSafeUpdates = "SET SQL_SAFE_UPDATES = 0";
+        conn.query(disableSafeUpdates, function (err, result) {
+            if(err){
+                console.log(err)
+            }else{
+                if(res){
+                    let query = 'delete from police where police_id = ?';
+                    let formattedQuery = mysql.format(query, [parseInt(request.body.police_id)]);
+                    console.log(formattedQuery)
+                    conn.query(formattedQuery, function (err, result) {
+                        if (err ) {
+                            console.log("police delete error");
+        
+                            response.status(404).send("police delete error");
+                        } else {
+                            response.send(true);
+                        }
+                    }
+                    );
+                    
                 }
             }
-            );
-            
-        }
+        })
     }).catch(error => { response.status(404);console.log(error) })
 })
 
