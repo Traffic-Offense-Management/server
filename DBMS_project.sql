@@ -45,7 +45,7 @@ CREATE TABLE police(
     phone_no varchar(12),
     username varchar(20) UNIQUE,
     password varchar(32),
-    FOREIGN KEY(station_id) REFERENCES police_station(station_id)
+    FOREIGN KEY(station_id) REFERENCES police_station(station_id) on delete set null
 );
 
 
@@ -89,7 +89,7 @@ CREATE TABLE offender(
     time time,
     offense_no int,
     status varchar(10),
-    FOREIGN KEY (police_id) REFERENCES police(police_id),
+    FOREIGN KEY (police_id) REFERENCES police(police_id) on delete set null,
     FOREIGN KEY (offense_no) REFERENCES offense(offense_no),
     FOREIGN KEY(vehicle_no) REFERENCES vehicles(vehicle_no)
 );
@@ -103,7 +103,7 @@ CREATE TABLE towed_vehicles(
     time datetime,
     FOREIGN KEY(offense_no) REFERENCES offense(offense_no),
     FOREIGN KEY(vehicle_no) REFERENCES vehicles(vehicle_no),
-    FOREIGN KEY(station_id) REFERENCES police_station(station_id)
+    FOREIGN KEY(station_id) REFERENCES police_station(station_id) on delete set null
 );
 
 
@@ -116,8 +116,8 @@ CREATE TABLE complaints(
     date datetime NOT NULL,
     status varchar(20),
     FOREIGN KEY(user_id) REFERENCES user(user_id),
-    FOREIGN KEY (police_id) REFERENCES police(police_id),
-    FOREIGN KEY(station_id) REFERENCES police_station(station_id)
+    FOREIGN KEY (police_id) REFERENCES police(police_id) on delete set null,
+    FOREIGN KEY(station_id) REFERENCES police_station(station_id) on delete set null
 );
 
 CREATE TABLE break_and_run(
@@ -127,7 +127,7 @@ CREATE TABLE break_and_run(
     place varchar(100),
     date datetime,
     offense_no int,
-    FOREIGN KEY (police_id) REFERENCES police(police_id),
+    FOREIGN KEY (police_id) REFERENCES police(police_id) on delete set null,
     FOREIGN KEY(vehicle_no) REFERENCES vehicles(vehicle_no),
     FOREIGN KEY(offense_no) REFERENCES offense(offense_no)
 );
