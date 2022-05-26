@@ -265,12 +265,12 @@ app.get("/police/offenses/:police_id", async(req, res) => {
 
     query = mysql.format(query, [req.params.police_id]);
     if(nameFilter){
-        nameFilter += '%';
+        nameFilter = '%' + nameFilter + '%';
         query += " and name like ? ";
         query = mysql.format(query, nameFilter);
     }
     if(placeFilter){
-        placeFilter += '%';
+        placeFilter = '%' + placeFilter + '%';
         query += " and place like ? ";
         query = mysql.format(query, placeFilter);
     }
@@ -419,7 +419,7 @@ app.get("/offenses/user/:username", async(req, res) => {
 
 app.get("/offenses/tow/:username", async(req, res) => {
 
-    let query = 'select user.vehicle_no,station_id,offense_no,fine_no,station_name,place,time,fine from user natural join towed_vehicles natural join police_station natural join offense where user_id= ? order by time desc';
+    let query = 'select user.vehicle_no,station_id,offense_no, description, fine_no,station_name,place,time,fine from user natural join towed_vehicles natural join police_station natural join offense where user_id= ? order by time desc';
     let queryString = mysql.format(query, [req.params.username]);
     conn.query(queryString, function(err, result){
         if(err)
@@ -486,7 +486,7 @@ app.post("/complaints/new", async(req, res) => {
 
 app.get("/tow/:vehicle_no", async(req, res) => {
 
-    let query = 'select * from towed_vehicles where vehicle_no = ?';
+    let query = 'select * from towed_vehicles natural join offenses where vehicle_no = ?';
     console.log('here')
     let queryString = mysql.format(query, [req.params.vehicle_no]);
     conn.query(queryString, function(err, result){
@@ -529,7 +529,7 @@ app.post("/publichome/malfunction", async(req, res) => {
 
 app.get("/publichome/tow/:vehicle_no", async(req, res) => {
 
-    let query = 'select * from towed_vehicles where vehicle_no = ?';
+    let query = 'select * from towed_vehicles natural join offense where vehicle_no = ?';
     console.log('here')
     let queryString = mysql.format(query, [req.params.vehicle_no]);
     conn.query(queryString, function(err, result){

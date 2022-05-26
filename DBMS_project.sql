@@ -2,7 +2,6 @@ DROP DATABASE IF EXISTS project;
 CREATE DATABASE project;
 USE project;
 
-
 drop view if exists offenses_today;
 drop view if exists offenses_this_month;
 drop table if exists towing_offenses;
@@ -22,13 +21,13 @@ drop table if exists vehicles;
 CREATE TABLE authority(
     username varchar(20) UNIQUE PRIMARY KEY,
     password varchar(100),
-    name varchar(30),
+    name varchar(30) not null,
     position varchar(50)
 );
 
 CREATE TABLE police_station(
     station_id int PRIMARY KEY AUTO_INCREMENT,
-    station_name varchar(100),
+    station_name varchar(100) not null,
     station_address varchar(100),
     pincode int CHECK(pincode>=100000 AND pincode<=999999)
 );
@@ -38,12 +37,12 @@ CREATE TABLE police_station(
 CREATE TABLE police(
 	police_id int PRIMARY KEY AUTO_INCREMENT,
     station_id int,
-    name varchar(30),
+    name varchar(30) not null,
     dob date,
     address varchar(100),
     email varchar(30) check(instr(email, '@') > 0 and right(email, 3) = 'com'),
     phone_no varchar(12),
-    username varchar(20) UNIQUE,
+    username varchar(20) UNIQUE not null,
     password varchar(32),
     FOREIGN KEY(station_id) REFERENCES police_station(station_id) on delete set null
 );
@@ -62,12 +61,12 @@ CREATE TABLE towing_offenses(
 
 
 CREATE TABLE user(
-	user_id varchar(10),
-    name varchar(30),
-    dl_no varchar(15),
-    vehicle_no varchar(10) unique,
+	user_id varchar(10) not null,
+    name varchar(30) not null,
+    dl_no varchar(15) unique not null,
+    vehicle_no varchar(10) unique not null,
     address varchar(100),
-    phone decimal(10,0),
+    phone decimal(10,0) not null,
     password varchar(20),
     PRIMARY KEY(user_id)
 );
@@ -90,8 +89,7 @@ CREATE TABLE offender(
     offense_no int,
     status varchar(10),
     FOREIGN KEY (police_id) REFERENCES police(police_id) on delete set null,
-    FOREIGN KEY (offense_no) REFERENCES offense(offense_no),
-    FOREIGN KEY(vehicle_no) REFERENCES vehicles(vehicle_no)
+    FOREIGN KEY (offense_no) REFERENCES offense(offense_no)
 );
 
 CREATE TABLE towed_vehicles(
@@ -102,7 +100,6 @@ CREATE TABLE towed_vehicles(
     place varchar(100),
     time datetime,
     FOREIGN KEY(offense_no) REFERENCES offense(offense_no),
-    FOREIGN KEY(vehicle_no) REFERENCES vehicles(vehicle_no),
     FOREIGN KEY(station_id) REFERENCES police_station(station_id) on delete set null
 );
 
@@ -128,7 +125,6 @@ CREATE TABLE break_and_run(
     date datetime,
     offense_no int,
     FOREIGN KEY (police_id) REFERENCES police(police_id) on delete set null,
-    FOREIGN KEY(vehicle_no) REFERENCES vehicles(vehicle_no),
     FOREIGN KEY(offense_no) REFERENCES offense(offense_no)
 );
 
@@ -142,7 +138,6 @@ create table malfunction(
  );
 
 insert into authority values('rakshith', '$2b$10$WDkHLoD2.HqlRNDr7/n7cOpmNjQEwwJhiiRNA2vfFRGLPYW8dJlUi', 'Rakshith Mohan', 'Secretary');
-
 insert into authority values('amogh', '$2b$10$y.9DxxQY8h8g/yx7j782VOSe1ii0WveWrEg2l7KeWyYS21qLr1v2O', 'Amogh Umesh', 'Secretary');
 
 insert into police_station values(1000, 'Mangalore Police Station', 'NH 66, Surathkal, Near Govinda Dasa College, Mangaluru, Karnataka', '575014');
